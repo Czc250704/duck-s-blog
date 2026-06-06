@@ -1,4 +1,4 @@
-/* 模态框显示/隐藏 */
+/* ========== 模态框控制 ========== */
 #previewModal {
     display: none;
 }
@@ -6,7 +6,92 @@
     display: flex;
 }
 
-/* ========== Markdown 渲染样式（仿 DeepSeek 阅读体验） ========== */
+/* ========== 动画关键帧 ========== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(230, 126, 34, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(230, 126, 34, 0);
+    }
+}
+
+@keyframes modalPopIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ========== 动画类 ========== */
+.animate-fadeInUp {
+    animation: fadeInUp 0.5s ease forwards;
+}
+.animate-slideInLeft {
+    animation: slideInLeft 0.4s ease forwards;
+}
+.card-hover {
+    transition: all 0.25s ease;
+}
+.card-hover:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 25px -12px rgba(230, 126, 34, 0.2);
+    border-color: #fed7aa;
+}
+.btn-pulse:hover {
+    animation: pulseGlow 0.8s ease-out;
+    transform: scale(1.02);
+}
+.modal-content {
+    animation: modalPopIn 0.25s ease-out;
+}
+.nav-link {
+    position: relative;
+}
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background-color: #e67e22;
+    transition: width 0.2s ease;
+}
+.nav-link:hover::after {
+    width: 100%;
+}
+
+/* ========== Markdown 渲染样式（仿 DeepSeek） ========== */
 #previewContainer {
     font-family: 'Inter', system-ui, sans-serif;
     line-height: 1.65;
