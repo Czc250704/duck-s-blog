@@ -7,4 +7,13 @@
     "description": "电工基础知识文档，适合初学者。",
     "category": "电工"
   }
+
+  {
+    "title": "md文件测试",
+    "filename": "abc.md",
+    "type": "md",
+    "date": "2025-05-31",
+    "description": "md文件测试",
+    "category": "电工"
+  }
 ]
