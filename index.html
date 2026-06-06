@@ -4,111 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Duck's Blog</title>
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 自定义主题：橘色 -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        orange: {
-                            500: '#e67e22',
-                            600: '#d35400',
-                            50: '#fef9f0',
-                            100: '#fff2e6',
-                        }
+                        orange: { 500: '#e67e22', 600: '#d35400', 50: '#fef9f0', 100: '#fff2e6' }
                     }
                 }
             }
         }
     </script>
-    <!-- 外部自定义样式（MD渲染 + 模态框） -->
+    <!-- Markdown 渲染库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 自定义样式（动画 + MD 渲染） -->
     <link rel="stylesheet" href="assets/css/main.css">
-    <!-- 字体 -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-orange-50 font-[Inter] text-stone-800">
 
-    <!-- 头部（完全参照 codegin 风格） -->
+    <!-- 头部 -->
     <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-orange-100">
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <a href="#" class="text-2xl font-bold text-orange-500 tracking-tight">Duck's Blog</a>
             <nav class="hidden md:flex gap-6">
-                <a href="#" class="text-stone-600 hover:text-orange-500 font-medium border-b-2 border-transparent hover:border-orange-500 transition pb-1">首页</a>
-                <a href="#" class="text-stone-600 hover:text-orange-500">归档</a>
-                <a href="#" class="text-stone-600 hover:text-orange-500">关于</a>
+                <a href="#" class="nav-link text-stone-600 hover:text-orange-500 font-medium pb-1">首页</a>
+                <a href="#" class="nav-link text-stone-600 hover:text-orange-500">归档</a>
+                <a href="#" class="nav-link text-stone-600 hover:text-orange-500">关于</a>
             </nav>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-6 py-10">
-        <!-- 网格布局：2栏 (左:文章列表, 右:侧边栏) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- 左侧文档列表 (占2/3) -->
+            <!-- 左侧文档列表 -->
             <div class="lg:col-span-2" id="docsList">
-                <div class="text-center py-10 text-stone-400">加载中...</div>
+                <div class="text-center py-10 text-stone-400">加载文档列表中...</div>
             </div>
 
-            <!-- 右侧边栏（完全按照 codegin 结构） -->
+            <!-- 右侧边栏（每个卡片独立动画） -->
             <aside class="space-y-6">
                 <!-- 搜索框 -->
-                <div class="bg-white rounded-2xl border border-orange-100 p-5 shadow-sm">
+                <div class="bg-white rounded-2xl border border-orange-100 p-5 shadow-sm animate-slideInLeft">
                     <div class="flex items-center gap-2 text-orange-500 font-semibold mb-3">
                         <svg class="w-5 h-5 fill-current"><use href="assets/icons/sprite.svg#icon-search"/></svg>
                         <span>搜索文章</span>
                     </div>
-                    <div class="flex gap-2">
-                        <input type="text" id="searchInput" placeholder="关键词..." class="flex-1 px-4 py-2 border border-orange-100 rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-orange-200 text-sm">
-                        <button id="searchBtn" class="bg-orange-100 hover:bg-orange-200 text-orange-600 px-4 rounded-full transition">🔍</button>
-                    </div>
+                    <input type="text" id="searchInput" placeholder="关键词..." class="w-full px-4 py-2 border border-orange-100 rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-orange-200 text-sm">
                 </div>
 
                 <!-- 关于作者 -->
-                <div class="bg-white rounded-2xl border border-orange-100 p-5 shadow-sm text-center">
+                <div class="bg-white rounded-2xl border border-orange-100 p-5 shadow-sm text-center animate-slideInLeft" style="animation-delay: 0.05s">
                     <div class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
                         <svg class="w-10 h-10 fill-orange-500"><use href="assets/icons/sprite.svg#icon-user"/></svg>
                     </div>
                     <h3 class="font-bold text-lg">Duck</h3>
                     <p class="text-sm text-stone-500 mt-1">会用AI的duck</p>
-                    <p class="text-xs text-stone-400 mt-2">热爱ps</p>
+                    <p class="text-xs text-stone-400 mt-2">热爱PS / 技术分享</p>
                 </div>
 
                 <!-- 最新文章 -->
-                <div class="bg-white rounded-2xl border border-orange-100 p-5 shadow-sm">
+                <div class="bg-white rounded-2xl border border-orange-100 p-5 shadow-sm animate-slideInLeft" style="animation-delay: 0.1s">
                     <div class="flex items-center gap-2 text-orange-500 font-semibold mb-3">
                         <svg class="w-5 h-5 fill-current"><use href="assets/icons/sprite.svg#icon-clock"/></svg>
-                        <span>最新</span>
+                        <span>最新发布</span>
                     </div>
-                    <ul class="space-y-2 text-sm" id="recentList">
-                        <!-- 动态加载 -->
-                    </ul>
+                    <ul class="space-y-2 text-sm" id="recentList"></ul>
                 </div>
 
                 <!-- 分类目录 -->
-                <div class="bg-white rounded-2xl border border-orange-100 p-5 shadow-sm">
+                <div class="bg-white rounded-2xl border border-orange-100 p-5 shadow-sm animate-slideInLeft" style="animation-delay: 0.15s">
                     <div class="flex items-center gap-2 text-orange-500 font-semibold mb-3">
                         <svg class="w-5 h-5 fill-current"><use href="assets/icons/sprite.svg#icon-folder"/></svg>
-                        <span>分类</span>
+                        <span>分类目录</span>
                     </div>
-                    <ul class="space-y-2 text-sm" id="categoryList">
-                        <!-- 动态加载 -->
-                    </ul>
+                    <ul class="space-y-2 text-sm" id="categoryList"></ul>
                 </div>
 
-            </aside>
-        </div>
-    </main>
 
     <!-- 预览模态框 -->
     <div id="previewModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center hidden">
-        <div class="bg-white rounded-3xl w-11/12 max-w-5xl max-h-[90vh] overflow-auto relative shadow-2xl">
+        <div class="bg-white rounded-3xl w-11/12 max-w-5xl max-h-[90vh] overflow-auto relative modal-content">
             <button class="absolute right-4 top-4 text-orange-500 hover:text-orange-700 text-2xl font-bold z-10" id="closeModalBtn">&times;</button>
             <div id="previewContainer" class="p-6 pt-12"></div>
         </div>
     </div>
 
-    <script src="assets/libs/marked.min.js"></script>
     <script src="assets/js/main.js"></script>
 </body>
 </html>
