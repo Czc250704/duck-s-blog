@@ -13,18 +13,3 @@
 ## 功能
 
 - 📝 **Markdown 预览**：渲染为仿 DeepSeek 风格，代码高亮、表格、引用。
-- 📊 **PPTX 预览**：通过微软 Office Online 嵌入，支持在线播放。
-- 📄 **DOCX 预览**：同样使用 Office Online，只读浏览。
-- 🔍 **前端搜索**：按标题/描述过滤。
-- 📂 **手动上传指引**：侧边栏说明如何添加文档（无需后端）。
-
-## 自定义
-
-修改 `tailwind.config` 中的 `colors.orange` 可全局调整主题色。所有图标均为自制 SVG，位于 `assets/icons/sprite.svg`。
-
-## 预览效果
-
-访问 `index.html` 即可看到卡片列表，点击“预览”按钮查看文档内容。
-
----
-🧡 享受你的橘色博客！
