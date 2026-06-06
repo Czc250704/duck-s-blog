@@ -1,0 +1,100 @@
+/* 模态框显示/隐藏 */
+#previewModal {
+    display: none;
+}
+#previewModal.flex {
+    display: flex;
+}
+
+/* ========== Markdown 渲染样式（仿 DeepSeek 阅读体验） ========== */
+#previewContainer {
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.65;
+    color: #2e241f;
+    max-width: 900px;
+    margin: 0 auto;
+}
+#previewContainer h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 2px solid #ffe0b5;
+    padding-bottom: 0.3rem;
+    color: #e67e22;
+}
+#previewContainer h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-top: 1.3rem;
+    margin-bottom: 0.6rem;
+}
+#previewContainer h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: #c95f0e;
+}
+#previewContainer p {
+    margin-bottom: 1rem;
+}
+#previewContainer a {
+    color: #e67e22;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+#previewContainer ul, #previewContainer ol {
+    margin: 0.6rem 0 1rem 1.8rem;
+}
+#previewContainer li {
+    margin: 0.25rem 0;
+}
+#previewContainer blockquote {
+    border-left: 4px solid #e67e22;
+    background: #fff7ed;
+    padding: 0.6rem 1rem;
+    margin: 1rem 0;
+    border-radius: 12px;
+    color: #5a4a3a;
+}
+#previewContainer code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: #fef3e8;
+    padding: 0.2rem 0.4rem;
+    border-radius: 6px;
+    font-size: 0.85em;
+    color: #d35400;
+}
+#previewContainer pre {
+    background: #1e1b18;
+    color: #fce7d6;
+    padding: 1rem;
+    border-radius: 16px;
+    overflow-x: auto;
+    margin: 1.2rem 0;
+}
+#previewContainer pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+#previewContainer table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+#previewContainer th, #previewContainer td {
+    border: 1px solid #ffe0b5;
+    padding: 0.5rem 0.75rem;
+}
+#previewContainer th {
+    background: #fff2e6;
+    font-weight: 600;
+}
+#previewContainer img {
+    max-width: 100%;
+    border-radius: 16px;
+}
