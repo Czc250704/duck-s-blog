@@ -15,29 +15,29 @@ fetch('data/files.json')
         console.error(err);
     });
 
-// 渲染文档卡片列表
+// 渲染文档卡片列表（带入场动画、悬停效果、按钮脉冲）
 function renderDocs(docs) {
     const container = document.getElementById('docsList');
     if (!docs.length) {
         container.innerHTML = `<div class="bg-white rounded-2xl border border-orange-100 p-6 text-center text-stone-500">暂无文档，请将文件放入 uploads/ 并修改 data/files.json</div>`;
         return;
     }
-    container.innerHTML = docs.map(doc => `
-        <div class="bg-white rounded-2xl border border-orange-100 p-6 mb-6 transition hover:shadow-md">
+    container.innerHTML = docs.map((doc, index) => `
+        <div class="bg-white rounded-2xl border border-orange-100 p-6 mb-6 transition card-hover animate-fadeInUp" style="animation-delay: ${index * 0.05}s;">
             <h2 class="text-xl font-bold text-stone-800 mb-1">${escapeHtml(doc.title)}</h2>
             <div class="flex gap-4 text-sm text-stone-500 mb-3">
                 <span class="flex items-center gap-1"><svg class="w-4 h-4 fill-current"><use href="assets/icons/sprite.svg#icon-calendar"/></svg> ${doc.date}</span>
                 <span class="flex items-center gap-1"><svg class="w-4 h-4 fill-current"><use href="assets/icons/sprite.svg#icon-file"/></svg> ${doc.type.toUpperCase()}</span>
             </div>
             <p class="text-stone-600 mb-4">${escapeHtml(doc.description)}</p>
-            <button class="preview-btn bg-orange-50 hover:bg-orange-100 text-orange-600 font-medium py-2 px-5 rounded-full border border-orange-200 transition flex items-center gap-2" data-filename="${doc.filename}" data-type="${doc.type}">
+            <button class="preview-btn bg-orange-50 hover:bg-orange-100 text-orange-600 font-medium py-2 px-5 rounded-full border border-orange-200 transition btn-pulse flex items-center gap-2" data-filename="${doc.filename}" data-type="${doc.type}">
                 <svg class="w-4 h-4 fill-current"><use href="assets/icons/sprite.svg#icon-eye"/></svg>
                 预览
             </button>
         </div>
     `).join('');
 
-    // 绑定预览按钮
+    // 绑定预览按钮事件
     document.querySelectorAll('.preview-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const filename = btn.dataset.filename;
@@ -74,13 +74,24 @@ function renderSidebar(docs) {
     document.getElementById('categoryList').innerHTML = categoryHtml || '<li>暂无分类</li>';
 }
 
-// 预览文件
+// 预览文件（打开模态框并添加弹出动画）
 function previewFile(filename, type) {
     const fileUrl = `uploads/${filename}`;
     const modal = document.getElementById('previewModal');
     const container = document.getElementById('previewContainer');
+    
+    // 显示模态框
     modal.classList.add('flex');
     modal.classList.remove('hidden');
+    
+    // 为模态框内容区添加弹出动画类（每次打开时重新触发动画）
+    const modalContent = modal.querySelector('.bg-white');
+    if (modalContent) {
+        modalContent.classList.remove('modal-content');
+        // 强制重绘以重新触发动画
+        void modalContent.offsetWidth;
+        modalContent.classList.add('modal-content');
+    }
 
     if (type === 'md') {
         fetch(fileUrl)
@@ -105,10 +116,11 @@ function previewFile(filename, type) {
     }
 }
 
-// 搜索功能（前端过滤）
+// 搜索功能（实时输入搜索，无需按钮）
 function bindSearch() {
     const searchInput = document.getElementById('searchInput');
-    const searchBtn = document.getElementById('searchBtn');
+    if (!searchInput) return;
+    
     const doSearch = () => {
         const keyword = searchInput.value.trim().toLowerCase();
         if (!keyword) {
@@ -121,10 +133,9 @@ function bindSearch() {
             renderDocs(filtered);
         }
     };
-    searchBtn.addEventListener('click', doSearch);
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') doSearch();
-    });
+    
+    // 使用 input 事件实时搜索
+    searchInput.addEventListener('input', doSearch);
 }
 
 // 关闭模态框
@@ -143,6 +154,7 @@ window.onclick = (e) => {
     }
 };
 
+// HTML 转义函数
 function escapeHtml(str) {
     return str.replace(/[&<>]/g, function(m) {
         if (m === '&') return '&amp;';
