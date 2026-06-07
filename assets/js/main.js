@@ -127,9 +127,16 @@ function previewFile(filename, type) {
         const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullUrl)}`;
         container.innerHTML = `<iframe src="${officeUrl}" width="100%" height="650px" frameborder="0" class="rounded-xl"></iframe>`;
     }
+    // 处理 PDF 文件
+    else if (type === 'pdf') {
+    const fullUrl = window.location.origin + '/' + encodeURI(fileUrl);
+    // 使用浏览器内置 PDF 查看器（Chrome/Edge 原生支持）
+    container.innerHTML = `<iframe src="${fullUrl}" width="100%" height="650px" frameborder="0" class="rounded-xl"></iframe>`;
+    }
     else {
         container.innerHTML = '<p>暂不支持此文件类型预览</p>';
     }
+
 }
 
 // ==================== 手动渲染数学公式（不依赖 auto-render） ====================
