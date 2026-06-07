@@ -21,24 +21,24 @@
     <script src="assets/libs/marked.min.js"></script>
     <!-- MathJax 数学公式渲染 -->
     <script>
-    window.MathJax = {
-        tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']],
-        displayMath: [['$$', '$$'], ['\\[', '\\]']],
-        processEscapes: true
-        },
-        options: {
-        ignoreHtmlClass: 'no-mathjax',
-        processHtmlClass: 'math'
-        },
-        startup: {
-        pageReady: () => {
-            return MathJax.startup.defaultPageReady();
-        }
-        }
-    };
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                ignoreHtmlClass: 'no-mathjax',
+                processHtmlClass: 'math'
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady();
+                }
+            }
+        };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+    <script src="assets/libs/mathjax/tex-chtml.js" id="MathJax-script" async></script>
     <!-- 自定义样式（动画 + MD 渲染） -->
     <link rel="stylesheet" href="assets/css/main.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
