@@ -81,14 +81,13 @@ function previewFile(filename, type) {
     const modal = document.getElementById('previewModal');
     const container = document.getElementById('previewContainer');
 
-    // 显示模态框并添加动画
     modal.classList.add('flex');
     modal.classList.remove('hidden');
 
     const modalContent = modal.querySelector('.bg-white');
     if (modalContent) {
         modalContent.classList.remove('modal-content');
-        void modalContent.offsetWidth; // 强制重绘
+        void modalContent.offsetWidth;
         modalContent.classList.add('modal-content');
     }
 
@@ -102,23 +101,13 @@ function previewFile(filename, type) {
                 return res.text();
             })
             .then(text => {
-                // 1. 使用 marked 将 Markdown 转为 HTML
                 let html = marked.parse(text);
                 container.innerHTML = html;
-
-                // 2. 使用 KaTeX 渲染数学公式（需要 auto-render 已加载）
-                if (typeof renderMathInElement === 'function') {
-                    renderMathInElement(container, {
-                        delimiters: [
-                            { left: '$$', right: '$$', display: true },
-                            { left: '$', right: '$', display: false },
-                            { left: '\\(', right: '\\)', display: false },
-                            { left: '\\[', right: '\\]', display: true }
-                        ],
-                        throwOnError: false
-                    });
+                // 手动渲染公式
+                if (typeof katex !== 'undefined') {
+                    renderMathInContainer(container);
                 } else {
-                    console.warn('KaTeX auto-render 未加载，公式将不会渲染');
+                    console.warn('KaTeX 未加载');
                 }
             })
             .catch(err => {
@@ -134,6 +123,40 @@ function previewFile(filename, type) {
     else {
         container.innerHTML = '<p>暂不支持此文件类型预览</p>';
     }
+}
+
+// 手动渲染容器内的公式（不依赖 auto-render）
+function renderMathInContainer(container) {
+    if (typeof katex === 'undefined') return;
+    const inlineRegex = /\\\(([\s\S]+?)\\\)/g;
+    const displayRegex = /\\\[([\s\S]+?)\\\]/g;
+
+    function walk(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            let text = node.textContent;
+            let hasMath = false;
+            let newHtml = text.replace(displayRegex, (match, formula) => {
+                hasMath = true;
+                try {
+                    return katex.renderToString(formula, { displayMode: true, throwOnError: false });
+                } catch(e) { return match; }
+            });
+            newHtml = newHtml.replace(inlineRegex, (match, formula) => {
+                hasMath = true;
+                try {
+                    return katex.renderToString(formula, { displayMode: false, throwOnError: false });
+                } catch(e) { return match; }
+            });
+            if (hasMath) {
+                const span = document.createElement('span');
+                span.innerHTML = newHtml;
+                node.parentNode.replaceChild(span, node);
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE && !['SCRIPT', 'STYLE', 'CODE'].includes(node.tagName)) {
+            Array.from(node.childNodes).forEach(walk);
+        }
+    }
+    walk(container);
 }
 
 // 搜索功能（实时输入搜索，无需按钮）
