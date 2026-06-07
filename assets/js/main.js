@@ -222,7 +222,7 @@ window.onclick = (e) => {
     }
 };
 
-// ==================== 辅助函数 ====================
+// ===================== 辅助函数 ====================
 function escapeHtml(str) {
     return str.replace(/[&<>]/g, function(m) {
         if (m === '&') return '&amp;';
