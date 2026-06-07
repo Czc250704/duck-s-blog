@@ -17,6 +17,15 @@
     "category": "Github"
   },
 
+    {
+    "title": "deepseek电工基础第一模块",
+    "filename": "电工1.md",
+    "type": "md",
+    "date": "2025-05-31",
+    "description": "deepseek电工基础第一模块梳理",
+    "category": "电工"
+  },
+
   {
     "title": "电阻串并联",
     "filename": "电阻串并联.md",
