@@ -75,39 +75,64 @@ function renderSidebar(docs) {
 }
 
 // 预览文件（打开模态框并添加弹出动画）
+// 预览文件（支持 MD 公式渲染 + Office 文档预览）
 function previewFile(filename, type) {
     const fileUrl = `uploads/${filename}`;
     const modal = document.getElementById('previewModal');
     const container = document.getElementById('previewContainer');
-    
+
     // 显示模态框
     modal.classList.add('flex');
     modal.classList.remove('hidden');
-    
-    // 为模态框内容区添加弹出动画类（每次打开时重新触发动画）
+
+    // 重新触发模态框弹出动画
     const modalContent = modal.querySelector('.bg-white');
     if (modalContent) {
         modalContent.classList.remove('modal-content');
-        // 强制重绘以重新触发动画
-        void modalContent.offsetWidth;
+        void modalContent.offsetWidth; // 强制重绘
         modalContent.classList.add('modal-content');
     }
 
+    // 清空旧内容
+    container.innerHTML = '<div class="text-center text-stone-400 py-10">加载中...</div>';
+
     if (type === 'md') {
-        fetch(fileUrl)
+        // 对中文文件名进行 URL 编码
+        const encodedUrl = encodeURI(fileUrl);
+        fetch(encodedUrl)
             .then(res => {
                 if (!res.ok) throw new Error('MD文件不存在');
                 return res.text();
             })
             .then(text => {
-                container.innerHTML = marked.parse(text);
+                // 使用 marked 解析 Markdown
+                let html = marked.parse(text);
+                container.innerHTML = html;
+
+                // 如果页面已加载 MathJax，则渲染公式
+                if (window.MathJax) {
+                    MathJax.typesetPromise([container]).catch(err => {
+                        console.warn('MathJax 渲染失败:', err);
+                    });
+                } else {
+                    // 若 MathJax 尚未加载（极少情况），等待加载完成后再渲染
+                    const waitForMathJax = setInterval(() => {
+                        if (window.MathJax) {
+                            clearInterval(waitForMathJax);
+                            MathJax.typesetPromise([container]).catch(e => console.warn(e));
+                        }
+                    }, 100);
+                    setTimeout(() => clearInterval(waitForMathJax), 5000);
+                }
             })
-            .catch(() => {
+            .catch(err => {
+                console.error('MD加载失败:', err);
                 container.innerHTML = '<p class="text-orange-600">❌ MD 文件加载失败，请确认 uploads/ 下有该文件。</p>';
             });
     }
     else if (type === 'pptx' || type === 'docx') {
-        const fullUrl = window.location.origin + '/' + fileUrl;
+        // 对完整路径进行编码，支持中文文件名
+        const fullUrl = window.location.origin + '/' + encodeURI(fileUrl);
         const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullUrl)}`;
         container.innerHTML = `<iframe src="${officeUrl}" width="100%" height="650px" frameborder="0" class="rounded-xl"></iframe>`;
     }
