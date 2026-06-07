@@ -9,25 +9,16 @@
   },
 
   {
-    "title": "git更新github文件",
-    "filename": "git更新github文件.md",
+    "title": "电容器的基本知识",
+    "filename": "电容.md",
     "type": "md",
     "date": "2025-05-31",
-    "description": "git更新github文件",
-    "category": "Github"
-  },
-
-    {
-    "title": "deepseek电工基础第一模块",
-    "filename": "电工1.md",
-    "type": "md",
-    "date": "2025-05-31",
-    "description": "deepseek电工基础第一模块梳理",
+    "description": "电容器的基本知识",
     "category": "电工"
   },
 
   {
-    "title": "电阻串并联",
+    "title": "电阻串并联总结",
     "filename": "电阻串并联.md",
     "type": "md",
     "date": "2025-05-31",
