@@ -75,17 +75,16 @@ function renderSidebar(docs) {
 }
 
 // 预览文件（打开模态框并添加弹出动画）
-// 预览文件（支持 MD 公式渲染 + Office 文档预览）
+// 预览文件（支持 Markdown + KaTeX 数学公式渲染 + Office 文档）
 function previewFile(filename, type) {
     const fileUrl = `uploads/${filename}`;
     const modal = document.getElementById('previewModal');
     const container = document.getElementById('previewContainer');
 
-    // 显示模态框
+    // 显示模态框并添加动画
     modal.classList.add('flex');
     modal.classList.remove('hidden');
 
-    // 重新触发模态框弹出动画
     const modalContent = modal.querySelector('.bg-white');
     if (modalContent) {
         modalContent.classList.remove('modal-content');
@@ -93,11 +92,9 @@ function previewFile(filename, type) {
         modalContent.classList.add('modal-content');
     }
 
-    // 清空旧内容
     container.innerHTML = '<div class="text-center text-stone-400 py-10">加载中...</div>';
 
     if (type === 'md') {
-        // 对中文文件名进行 URL 编码
         const encodedUrl = encodeURI(fileUrl);
         fetch(encodedUrl)
             .then(res => {
@@ -105,33 +102,31 @@ function previewFile(filename, type) {
                 return res.text();
             })
             .then(text => {
-                // 使用 marked 解析 Markdown
+                // 1. 使用 marked 将 Markdown 转为 HTML
                 let html = marked.parse(text);
                 container.innerHTML = html;
 
-                // 如果页面已加载 MathJax，则渲染公式
-                if (window.MathJax) {
-                    MathJax.typesetPromise([container]).catch(err => {
-                        console.warn('MathJax 渲染失败:', err);
+                // 2. 使用 KaTeX 渲染数学公式（需要 auto-render 已加载）
+                if (typeof renderMathInElement === 'function') {
+                    renderMathInElement(container, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\(', right: '\\)', display: false },
+                            { left: '\\[', right: '\\]', display: true }
+                        ],
+                        throwOnError: false
                     });
                 } else {
-                    // 若 MathJax 尚未加载（极少情况），等待加载完成后再渲染
-                    const waitForMathJax = setInterval(() => {
-                        if (window.MathJax) {
-                            clearInterval(waitForMathJax);
-                            MathJax.typesetPromise([container]).catch(e => console.warn(e));
-                        }
-                    }, 100);
-                    setTimeout(() => clearInterval(waitForMathJax), 5000);
+                    console.warn('KaTeX auto-render 未加载，公式将不会渲染');
                 }
             })
             .catch(err => {
                 console.error('MD加载失败:', err);
-                container.innerHTML = '<p class="text-orange-600">❌ MD 文件加载失败，请确认 uploads/ 下有该文件。</p>';
+                container.innerHTML = '<p class="text-orange-600">MD 文件加载失败，请确认 uploads/ 下有该文件。</p>';
             });
     }
     else if (type === 'pptx' || type === 'docx') {
-        // 对完整路径进行编码，支持中文文件名
         const fullUrl = window.location.origin + '/' + encodeURI(fileUrl);
         const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullUrl)}`;
         container.innerHTML = `<iframe src="${officeUrl}" width="100%" height="650px" frameborder="0" class="rounded-xl"></iframe>`;
