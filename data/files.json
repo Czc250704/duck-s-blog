@@ -3,7 +3,7 @@
     "title": "电工基础",
     "filename": "电工B.docx",
     "type": "docx",
-    "date": "2025-05-31",
+    "date": "2025-06-07",
     "description": "电工基础知识文档，适合初学者。",
     "category": "电工"
   },
@@ -12,25 +12,63 @@
     "title": "电容器的基本知识",
     "filename": "电容.md",
     "type": "md",
-    "date": "2025-06-7",
+    "date": "2025-06-07",
     "description": "电容器的基本知识",
     "category": "电工"
   },
 
   {
-    "title": "电容器的基本知识课本配套ppt",
-    "filename": "安装与测试电容器电路.pptx",
-    "type": "pptx",
-    "date": "2025-06-7",
-    "description": "电容器的基本知识",
-    "category": "电工"
+    "title": "AI触点容量不够",
+    "filename": "184 教材 触点容量不够.pdf",
+    "type": "pdf",
+    "date": "2025-06-07",
+    "description": "AI触点容量不够",
+    "category": "工厂,纯AI"
   },
-  
+
+  {
+    "title": "AI中间继电器的功能",
+    "filename": "184 教材 中间继电器的功能.pdf",
+    "type": "pdf",
+    "date": "2025-06-07",
+    "description": "AI中间继电器的功能",
+    "category": "工厂,纯AI"
+  },
+
+  {
+    "title": "AI接触器是继电器吗",
+    "filename": "184 教材 接触器是继电器吗？.pdf",
+    "type": "pdf",
+    "date": "2025-06-07",
+    "description": "AI接触器是继电器吗",
+    "category": "工厂,纯AI"
+  },
+
+  {
+    "title": "AI继电器的定义",
+    "filename": "184 教材 继电器的定义pdf",
+    "type": "pdf",
+    "date": "2025-06-07",
+    "description": "AI继电器的定义",
+    "category": "工厂,纯AI"
+  },
+
+
+  {
+    "title": "AI中间继电器交直流通用问题",
+    "filename": "186 教材 中间继电器交直流通用问题pdf",
+    "type": "pdf",
+    "date": "2025-06-07",
+    "description": "AI中间继电器交直流通用问题",
+    "category": "工厂,纯AI"
+  },
+
+
   {
     "title": "电阻串并联总结",
     "filename": "电阻串并联.md",
     "type": "md",
-    "date": "2025-06-7",
+    "date": "2025-06-07",
     "description": "电工基础知识文档，适合初学者。",
     "category": "电工"
   }
