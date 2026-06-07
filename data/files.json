@@ -9,14 +9,13 @@
   },
 
   {
-    "title": "git更新github文件",
-    "filename": "git更新github文件.md",
+    "title": "电容器的基本知识",
+    "filename": "电容.md",
     "type": "md",
     "date": "2025-05-31",
-    "description": "git更新github文件",
-    "category": "Github"
+    "description": "电容器的基本知识",
+    "category": "电工"
   },
-
 
   {
     "title": "电阻串并联",
