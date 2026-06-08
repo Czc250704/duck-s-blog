@@ -91,7 +91,8 @@ function initCategories() {
     document.querySelectorAll('.cat-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const cat = btn.dataset.cat;
-            if (cat !== 'all' && PROTECTED_CATEGORIES.includes(cat)) {
+            // 检查是否需要密码：除了"代码"分类，其他都需要密码
+            if (cat !== '代码') {
                 const pwd = prompt('此分类需要密码才能查看，请输入密码：');
                 if (pwd !== PASSWORD) {
                     alert('密码错误，无权限访问！');
