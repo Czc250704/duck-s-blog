@@ -1,6 +1,6 @@
 /**
  * Duck's Blog - 访达风格文件管理器
- * 分类板块 → 点击分类（非"代码"需密码）→ 文件列表（小卡片 + 侧边栏）→ 预览
+ * 所有弹窗均为 Mac 风格浮动窗口
  */
 
 // ==================== 全局变量 ====================
@@ -28,6 +28,123 @@ const PREVIEW_HANDLERS = {
     webp: previewImage,
     svg: previewImage
 };
+
+// ==================== Mac 风格浮动提示框 ====================
+function showPrompt(options) {
+    return new Promise((resolve) => {
+        const { title = '提示', message, input = false, placeholder = '', confirmText = '确定', cancelText = '取消' } = options;
+        
+        // 创建遮罩层
+        const overlay = document.createElement('div');
+        overlay.className = 'floating-prompt';
+        
+        // 创建弹窗窗口
+        const promptWindow = document.createElement('div');
+        promptWindow.className = 'prompt-window';
+        
+        // 标题栏
+        const header = document.createElement('div');
+        header.className = 'prompt-header';
+        header.innerHTML = `
+            <div class="prompt-buttons">
+                <div class="prompt-close" title="关闭"></div>
+            </div>
+            <span class="prompt-title">${escapeHtml(title)}</span>
+            <div class="prompt-placeholder"></div>
+        `;
+        
+        // 内容区
+        const body = document.createElement('div');
+        body.className = 'prompt-body';
+        
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'prompt-message';
+        msgDiv.innerHTML = escapeHtml(message);
+        body.appendChild(msgDiv);
+        
+        let inputEl = null;
+        if (input) {
+            inputEl = document.createElement('input');
+            inputEl.type = 'password';
+            inputEl.className = 'prompt-input';
+            inputEl.placeholder = placeholder;
+            inputEl.placeholder = '请输入密码';
+            body.appendChild(inputEl);
+        }
+        
+        // 底部按钮
+        const footer = document.createElement('div');
+        footer.className = 'prompt-footer';
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'prompt-btn prompt-btn-secondary';
+        cancelBtn.textContent = cancelText;
+        
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'prompt-btn prompt-btn-primary';
+        confirmBtn.textContent = confirmText;
+        
+        footer.appendChild(cancelBtn);
+        footer.appendChild(confirmBtn);
+        body.appendChild(footer);
+        
+        promptWindow.appendChild(header);
+        promptWindow.appendChild(body);
+        overlay.appendChild(promptWindow);
+        document.body.appendChild(overlay);
+        
+        // 关闭函数
+        const close = (result, value) => {
+            overlay.remove();
+            resolve({ confirmed: result, value });
+        };
+        
+        // 事件绑定
+        const closeBtn = header.querySelector('.prompt-close');
+        closeBtn.addEventListener('click', () => close(false, null));
+        
+        cancelBtn.addEventListener('click', () => close(false, null));
+        
+        confirmBtn.addEventListener('click', () => {
+            if (inputEl) {
+                close(true, inputEl.value);
+            } else {
+                close(true, null);
+            }
+        });
+        
+        if (inputEl) {
+            inputEl.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    confirmBtn.click();
+                }
+            });
+            setTimeout(() => inputEl.focus(), 100);
+        }
+        
+        // 点击遮罩层关闭（非弹窗区域）
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                close(false, null);
+            }
+        });
+    });
+}
+
+function showAlert(message, title = '提示') {
+    return showPrompt({ title, message, input: false, confirmText: '确定', cancelText: '' });
+}
+
+function showPasswordPrompt() {
+    return showPrompt({
+        title: '密码验证',
+        message: '此分类需要密码才能查看，请输入密码：',
+        input: true,
+        placeholder: '请输入密码',
+        confirmText: '验证',
+        cancelText: '取消'
+    });
+}
 
 // ==================== 启动动画 ====================
 function initSplash() {
@@ -67,7 +184,7 @@ async function loadData() {
     }
 }
 
-// ==================== 分类板块（大按钮块） ====================
+// ==================== 分类板块 ====================
 function renderCategories() {
     const categories = [...new Set(allDocs.map(doc => doc.category || '未分类'))].sort();
     const container = document.getElementById('categoriesGrid');
@@ -86,15 +203,13 @@ function renderCategories() {
         `;
     }).join('');
 
-    // 绑定点击事件
     document.querySelectorAll('.category-block').forEach(block => {
-        block.addEventListener('click', () => {
+        block.addEventListener('click', async () => {
             const cat = block.dataset.category;
-            // 只有"代码"分类不需要密码
             if (cat !== '代码') {
-                const pwd = prompt('此分类需要密码才能查看，请输入密码：');
-                if (pwd !== PASSWORD) {
-                    alert('密码错误，无权限访问！');
+                const result = await showPasswordPrompt();
+                if (!result.confirmed || result.value !== PASSWORD) {
+                    await showAlert('密码错误，无权限访问！', '验证失败');
                     return;
                 }
             }
@@ -108,12 +223,10 @@ function enterCategory(category) {
     currentCategory = category;
     const files = allDocs.filter(doc => (doc.category || '未分类') === category);
 
-    // 切换视图
     document.getElementById('categoriesView').classList.add('hidden');
     document.getElementById('filesView').classList.remove('hidden');
     document.getElementById('currentCategoryTitle').innerText = category;
 
-    // 渲染文件小卡片
     const filesContainer = document.getElementById('filesList');
     filesContainer.innerHTML = files.map((file, idx) => `
         <div class="file-card-sm flex justify-between items-center" data-filename="${file.filename}" data-type="${file.type}">
@@ -126,13 +239,10 @@ function enterCategory(category) {
                     <div class="text-xs text-stone-400">${file.date} · ${file.type.toUpperCase()}</div>
                 </div>
             </div>
-            <button class="preview-btn text-orange-500 hover:text-orange-600 text-sm px-3 py-1 rounded-full hover:bg-orange-50 transition">
-                预览
-            </button>
+            <button class="preview-btn text-orange-500 hover:text-orange-600 text-sm px-3 py-1 rounded-full hover:bg-orange-50 transition">预览</button>
         </div>
     `).join('');
 
-    // 渲染右侧边栏文件导航
     const sidebarList = document.getElementById('fileSidebarList');
     sidebarList.innerHTML = files.map(file => `
         <li class="sidebar-file-item" data-filename="${file.filename}" data-type="${file.type}">
@@ -143,7 +253,6 @@ function enterCategory(category) {
         </li>
     `).join('');
 
-    // 绑定预览事件（小卡片按钮 + 侧边栏项）
     document.querySelectorAll('.preview-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -157,7 +266,6 @@ function enterCategory(category) {
     document.querySelectorAll('.sidebar-file-item').forEach(item => {
         item.addEventListener('click', () => {
             previewFile(item.dataset.filename, item.dataset.type);
-            // 高亮当前选中的侧边栏项
             document.querySelectorAll('.sidebar-file-item').forEach(i => i.classList.remove('active'));
             item.classList.add('active');
         });
@@ -218,11 +326,9 @@ function previewMarkdown(filename) {
 
 function previewOffice(filename) {
     const container = showPreviewContainer();
-    // 获取当前域名，强制转为 HTTPS（因为 Office Online 需要 HTTPS）
     let hostname = window.location.hostname;
     let httpsUrl = `https://${hostname}/uploads/${encodeURIComponent(filename)}`;
     
-    // 本地测试时回退到 HTTP
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
         httpsUrl = `${window.location.origin}/uploads/${encodeURIComponent(filename)}`;
     }
