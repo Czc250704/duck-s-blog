@@ -312,7 +312,7 @@ function previewFile(filename, type) {
     }
 }
 
-// ========== 预览 Markdown（修复公式渲染） ==========
+// ========== 预览 Markdown（预渲染公式，最可靠） ==========
 function previewMarkdown(filename) {
     const container = showPreviewContainer();
     const encodedUrl = encodeURI(`uploads/${filename}`);
@@ -323,35 +323,43 @@ function previewMarkdown(filename) {
             return res.text();
         })
         .then(rawMd => {
-            // 1. 保护公式分隔符，防止 Marked 转义
-            let protectedMd = rawMd
-                // 保护块级公式 \[ ... \]
-                .replace(/\\\[([\s\S]*?)\\\]/g, (match, content) => {
-                    return `@@DISPLAYMATH_START@@${content}@@DISPLAYMATH_END@@`;
-                })
-                // 保护行内公式 \( ... \)
-                .replace(/\\\(([\s\S]*?)\\\)/g, (match, content) => {
-                    return `@@INLINEMATH_START@@${content}@@INLINEMATH_END@@`;
-                });
-
-            // 2. 使用 Marked 解析
-            let html = marked.parse(protectedMd);
-
-            // 3. 恢复公式分隔符
-            html = html
-                .replace(/@@DISPLAYMATH_START@@([\s\S]*?)@@DISPLAYMATH_END@@/g, '\\[$1\\]')
-                .replace(/@@INLINEMATH_START@@([\s\S]*?)@@INLINEMATH_END@@/g, '\\($1\\)');
-
+            // 1. 使用 KaTeX 预渲染所有公式，替换为 HTML
+            let processedMd = rawMd;
+            
+            // 处理块级公式 \[ ... \]
+            processedMd = processedMd.replace(/\\\[([\s\S]*?)\\\]/g, (match, formula) => {
+                try {
+                    return katex.renderToString(formula, { displayMode: true, throwOnError: false });
+                } catch (e) {
+                    console.warn('块级公式渲染失败:', formula);
+                    return match;
+                }
+            });
+            
+            // 处理行内公式 \( ... \)
+            processedMd = processedMd.replace(/\\\(([\s\S]*?)\\\)/g, (match, formula) => {
+                try {
+                    return katex.renderToString(formula, { displayMode: false, throwOnError: false });
+                } catch (e) {
+                    console.warn('行内公式渲染失败:', formula);
+                    return match;
+                }
+            });
+            
+            // 2. 现在 processedMd 中已经没有原始公式代码，都是 HTML
+            // 使用 marked 解析剩余 Markdown（标题、列表、粗体等）
+            let html = marked.parse(processedMd);
             container.innerHTML = html;
-
-            // 4. 调用 KaTeX 渲染公式
+            
+            // 3. 可选：如果有嵌套公式（极少数情况），再次调用渲染（一般不需要）
+            // 但为了保险，保留回退
             if (typeof katex !== 'undefined') {
+                // 注意：此时可能还有极少数公式未被替换（如代码块内的），可以再调用一次渲染函数
                 renderMathInContainer(container);
-            } else {
-                console.warn('KaTeX 未加载');
             }
         })
-        .catch(() => {
+        .catch(err => {
+            console.error(err);
             container.innerHTML = '<div class="text-center py-10 text-orange-600">MD 文件加载失败，请确认文件存在</div>';
         });
 }
