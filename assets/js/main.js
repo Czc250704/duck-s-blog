@@ -312,6 +312,7 @@ function previewFile(filename, type) {
     }
 }
 
+// ========== 预览 Markdown（修复公式渲染） ==========
 function previewMarkdown(filename) {
     const container = showPreviewContainer();
     const encodedUrl = encodeURI(`uploads/${filename}`);
@@ -321,16 +322,40 @@ function previewMarkdown(filename) {
             if (!res.ok) throw new Error('文件不存在');
             return res.text();
         })
-        .then(text => {
-            container.innerHTML = marked.parse(text);
+        .then(rawMd => {
+            // 1. 保护公式分隔符，防止 Marked 转义
+            let protectedMd = rawMd
+                // 保护块级公式 \[ ... \]
+                .replace(/\\\[([\s\S]*?)\\\]/g, (match, content) => {
+                    return `@@DISPLAYMATH_START@@${content}@@DISPLAYMATH_END@@`;
+                })
+                // 保护行内公式 \( ... \)
+                .replace(/\\\(([\s\S]*?)\\\)/g, (match, content) => {
+                    return `@@INLINEMATH_START@@${content}@@INLINEMATH_END@@`;
+                });
+
+            // 2. 使用 Marked 解析
+            let html = marked.parse(protectedMd);
+
+            // 3. 恢复公式分隔符
+            html = html
+                .replace(/@@DISPLAYMATH_START@@([\s\S]*?)@@DISPLAYMATH_END@@/g, '\\[$1\\]')
+                .replace(/@@INLINEMATH_START@@([\s\S]*?)@@INLINEMATH_END@@/g, '\\($1\\)');
+
+            container.innerHTML = html;
+
+            // 4. 调用 KaTeX 渲染公式
             if (typeof katex !== 'undefined') {
                 renderMathInContainer(container);
+            } else {
+                console.warn('KaTeX 未加载');
             }
         })
         .catch(() => {
             container.innerHTML = '<div class="text-center py-10 text-orange-600">MD 文件加载失败，请确认文件存在</div>';
         });
 }
+
 
 function previewOffice(filename) {
     const container = showPreviewContainer();
@@ -357,8 +382,11 @@ function previewImage(filename) {
     container.innerHTML = `<div class="flex justify-center"><img src="${fullUrl}" alt="预览图片" class="max-w-full max-h-[70vh] rounded-lg shadow-lg object-contain"></div>`;
 }
 
+// ========== 手动渲染数学公式（增强版） ==========
 function renderMathInContainer(element) {
     if (typeof katex === 'undefined') return;
+
+    // 匹配行内公式 \( ... \) 和块级公式 \[ ... \]
     const inlineRegex = /\\\(([\s\S]+?)\\\)/g;
     const displayRegex = /\\\[([\s\S]+?)\\\]/g;
 
@@ -368,19 +396,23 @@ function renderMathInContainer(element) {
             let hasMath = false;
             let newHtml = text;
 
+            // 先处理块级公式（display mode）
             newHtml = newHtml.replace(displayRegex, (match, formula) => {
                 hasMath = true;
                 try {
                     return katex.renderToString(formula, { displayMode: true, throwOnError: false });
                 } catch (e) {
+                    console.warn('块级公式渲染失败:', formula, e);
                     return match;
                 }
             });
+            // 再处理行内公式（inline mode）
             newHtml = newHtml.replace(inlineRegex, (match, formula) => {
                 hasMath = true;
                 try {
                     return katex.renderToString(formula, { displayMode: false, throwOnError: false });
                 } catch (e) {
+                    console.warn('行内公式渲染失败:', formula, e);
                     return match;
                 }
             });
