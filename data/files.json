@@ -63,6 +63,33 @@
   },
 
   {
+    "title": "戴维宁定理",
+    "filename": "戴维宁定理.md",
+    "type": "md",
+    "date": "2025-06-07",
+    "description": "戴维宁定理",
+    "category": "电工"
+  },
+
+    {
+    "title": "基尔霍夫定律",
+    "filename": "基尔霍夫.md",
+    "type": "md",
+    "date": "2025-06-07",
+    "description": "基尔霍夫定律",
+    "category": "电工"
+  },
+
+  {
+    "title": "叠加定理",
+    "filename": "叠加定理.md",
+    "type": "md",
+    "date": "2025-06-07",
+    "description": "叠加定理",
+    "category": "电工"
+  },
+
+  {
     "title": "AI触点容量不够",
     "filename": "184 教材 触点容量不够.pdf",
     "type": "pdf",
