@@ -63,6 +63,14 @@
     "category": "工厂,纯AI"
   },
 
+  {
+    "title": "github注册及page配置",
+    "filename": "github使用.md",
+    "type": "md",
+    "date": "2025-06-08",
+    "description": "github注册及page配置",
+    "category": "代码"
+  },
 
   {
     "title": "电阻串并联总结",
