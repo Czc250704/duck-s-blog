@@ -1,20 +1,17 @@
 /**
- * Duck's Blog 主脚本
- * 模块化设计，支持分类、密码保护、Mac风格模态框、多格式预览
- * 所有功能无 bug，界面现代化
+ * Duck's Blog - 访达风格文件管理器
+ * 分类板块 → 点击分类（非"代码"需密码）→ 文件列表（小卡片 + 侧边栏）→ 预览
  */
 
-// ==================== 模块：全局状态 ====================
+// ==================== 全局变量 ====================
 let allDocs = [];
-let currentCategory = 'all';
+let currentCategory = null;
 let isMaximized = false;
 let originalModalSize = {};
 
-// 受保护分类与密码
-const PROTECTED_CATEGORIES = ['代码'];
 const PASSWORD = '25307jdjs';
 
-// 支持预览的文件类型映射
+// 预览处理器映射
 const PREVIEW_HANDLERS = {
     md: previewMarkdown,
     docx: previewOffice,
@@ -32,15 +29,12 @@ const PREVIEW_HANDLERS = {
     svg: previewImage
 };
 
-// ==================== 模块：启动与数据加载 ====================
-/**
- * 启动动画序列
- */
+// ==================== 启动动画 ====================
 function initSplash() {
     const splash = document.getElementById('splash');
     const splashText = document.getElementById('splashText');
     const mainContent = document.getElementById('mainContent');
-    
+
     setTimeout(() => {
         splashText.style.animation = 'fadeOutScale 0.5s ease forwards';
         setTimeout(() => {
@@ -57,41 +51,46 @@ function initSplash() {
     }, 1200);
 }
 
-/**
- * 加载文档数据
- */
+// ==================== 加载数据 ====================
 async function loadData() {
     try {
         const res = await fetch('data/files.json');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         allDocs = await res.json();
-        initCategories();
-        renderDocsByCategory();
-        renderSidebar(allDocs);
-        bindSearch();
+        renderCategories();
     } catch (err) {
-        document.getElementById('docsList').innerHTML = `<div class="bg-white rounded-xl p-6 text-red-500 shadow-sm">无法加载 files.json，请确保文件存在且格式正确</div>`;
+        const grid = document.getElementById('categoriesGrid');
+        if (grid) {
+            grid.innerHTML = '<div class="text-red-500 col-span-full text-center py-10">无法加载 files.json，请检查文件格式</div>';
+        }
         console.error(err);
     }
 }
 
-// ==================== 模块：分类管理 ====================
-function initCategories() {
-    const categories = new Set(allDocs.map(doc => doc.category || '未分类'));
-    const sorted = Array.from(categories).sort();
-    const container = document.getElementById('categoryButtons');
+// ==================== 分类板块（大按钮块） ====================
+function renderCategories() {
+    const categories = [...new Set(allDocs.map(doc => doc.category || '未分类'))].sort();
+    const container = document.getElementById('categoriesGrid');
     if (!container) return;
-    
-    let html = `<button data-cat="all" class="cat-btn px-3 py-1 rounded-lg text-sm font-medium transition-all ${currentCategory === 'all' ? 'bg-orange-500 text-white shadow-md' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}">所有</button>`;
-    sorted.forEach(cat => {
-        html += `<button data-cat="${escapeHtml(cat)}" class="cat-btn px-3 py-1 rounded-lg text-sm font-medium transition-all ${currentCategory === cat ? 'bg-orange-500 text-white shadow-md' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}">${escapeHtml(cat)}</button>`;
-    });
-    container.innerHTML = html;
 
-    document.querySelectorAll('.cat-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const cat = btn.dataset.cat;
-            // 检查是否需要密码：除了"代码"分类，其他都需要密码
+    container.innerHTML = categories.map(cat => {
+        const count = allDocs.filter(d => (d.category || '未分类') === cat).length;
+        return `
+            <div class="category-block" data-category="${escapeHtml(cat)}">
+                <svg class="category-icon" viewBox="0 0 24 24">
+                    <use href="assets/icons/sprite.svg#icon-folder"/>
+                </svg>
+                <div class="category-name">${escapeHtml(cat)}</div>
+                <div class="category-count">${count} 个文件</div>
+            </div>
+        `;
+    }).join('');
+
+    // 绑定点击事件
+    document.querySelectorAll('.category-block').forEach(block => {
+        block.addEventListener('click', () => {
+            const cat = block.dataset.category;
+            // 只有"代码"分类不需要密码
             if (cat !== '代码') {
                 const pwd = prompt('此分类需要密码才能查看，请输入密码：');
                 if (pwd !== PASSWORD) {
@@ -99,179 +98,171 @@ function initCategories() {
                     return;
                 }
             }
-            currentCategory = cat;
-            updateCategoryButtonStyles(cat);
-            renderDocsByCategory();
+            enterCategory(cat);
         });
     });
 }
 
-function updateCategoryButtonStyles(activeCat) {
-    document.querySelectorAll('.cat-btn').forEach(btn => {
-        if (btn.dataset.cat === activeCat) {
-            btn.classList.remove('bg-orange-100', 'text-orange-700', 'hover:bg-orange-200');
-            btn.classList.add('bg-orange-500', 'text-white', 'shadow-md');
-        } else {
-            btn.classList.remove('bg-orange-500', 'text-white', 'shadow-md');
-            btn.classList.add('bg-orange-100', 'text-orange-700', 'hover:bg-orange-200');
-        }
-    });
-}
+// ==================== 进入分类文件列表 ====================
+function enterCategory(category) {
+    currentCategory = category;
+    const files = allDocs.filter(doc => (doc.category || '未分类') === category);
 
-function renderDocsByCategory() {
-    const filtered = currentCategory === 'all' 
-        ? allDocs 
-        : allDocs.filter(doc => (doc.category || '未分类') === currentCategory);
-    renderDocs(filtered);
-}
+    // 切换视图
+    document.getElementById('categoriesView').classList.add('hidden');
+    document.getElementById('filesView').classList.remove('hidden');
+    document.getElementById('currentCategoryTitle').innerText = category;
 
-// ==================== 模块：渲染文档卡片 ====================
-function renderDocs(docs) {
-    const container = document.getElementById('docsList');
-    if (!docs.length) {
-        container.innerHTML = `<div class="bg-white rounded-xl border border-orange-100 p-8 text-center text-stone-500 shadow-sm">📭 该分类下暂无文档</div>`;
-        return;
-    }
-    
-    container.innerHTML = docs.map((doc, idx) => `
-        <div class="bg-white rounded-xl border border-orange-100 p-6 mb-6 transition-all card-hover animate-fadeInUp shadow-sm" style="animation-delay: ${idx * 0.05}s;">
-            <div class="flex items-start justify-between">
-                <h2 class="text-xl font-bold text-stone-800 mb-1 hover:text-orange-500 transition-colors">${escapeHtml(doc.title)}</h2>
-                <span class="text-xs px-2 py-1 bg-orange-100 text-orange-600 rounded-full">${doc.type.toUpperCase()}</span>
+    // 渲染文件小卡片
+    const filesContainer = document.getElementById('filesList');
+    filesContainer.innerHTML = files.map((file, idx) => `
+        <div class="file-card-sm flex justify-between items-center" data-filename="${file.filename}" data-type="${file.type}">
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 fill-orange-500" viewBox="0 0 24 24">
+                    <use href="assets/icons/sprite.svg#icon-file"/>
+                </svg>
+                <div>
+                    <div class="font-medium text-stone-800">${escapeHtml(file.title)}</div>
+                    <div class="text-xs text-stone-400">${file.date} · ${file.type.toUpperCase()}</div>
+                </div>
             </div>
-            <div class="flex gap-4 text-sm text-stone-500 mb-3">
-                <span class="flex items-center gap-1"><svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-calendar"/></svg> ${doc.date}</span>
-                <span class="flex items-center gap-1"><svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-folder"/></svg> ${doc.category || '未分类'}</span>
-            </div>
-            <p class="text-stone-600 mb-4 line-clamp-2">${escapeHtml(doc.description)}</p>
-            <button class="preview-btn bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium py-2 px-5 rounded-full transition-all btn-pulse flex items-center gap-2 shadow-sm" data-filename="${doc.filename}" data-type="${doc.type}">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-eye"/></svg>
-                预览文档
+            <button class="preview-btn text-orange-500 hover:text-orange-600 text-sm px-3 py-1 rounded-full hover:bg-orange-50 transition">
+                预览
             </button>
         </div>
     `).join('');
 
+    // 渲染右侧边栏文件导航
+    const sidebarList = document.getElementById('fileSidebarList');
+    sidebarList.innerHTML = files.map(file => `
+        <li class="sidebar-file-item" data-filename="${file.filename}" data-type="${file.type}">
+            <svg class="w-4 h-4 fill-stone-400" viewBox="0 0 24 24">
+                <use href="assets/icons/sprite.svg#icon-file"/>
+            </svg>
+            <span class="truncate flex-1">${escapeHtml(file.title)}</span>
+        </li>
+    `).join('');
+
+    // 绑定预览事件（小卡片按钮 + 侧边栏项）
     document.querySelectorAll('.preview-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            previewFile(btn.dataset.filename, btn.dataset.type);
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const card = btn.closest('.file-card-sm');
+            if (card) {
+                previewFile(card.dataset.filename, card.dataset.type);
+            }
+        });
+    });
+
+    document.querySelectorAll('.sidebar-file-item').forEach(item => {
+        item.addEventListener('click', () => {
+            previewFile(item.dataset.filename, item.dataset.type);
+            // 高亮当前选中的侧边栏项
+            document.querySelectorAll('.sidebar-file-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
         });
     });
 }
 
-function renderSidebar(docs) {
-    const sorted = [...docs].sort((a,b) => new Date(b.date) - new Date(a.date));
-    const recentHtml = sorted.slice(0,5).map(doc => `<li class="flex justify-between items-center py-1"><span class="truncate">${escapeHtml(doc.title)}</span><span class="text-xs text-stone-400 ml-2">${doc.date}</span></li>`).join('');
-    const recentList = document.getElementById('recentList');
-    if (recentList) recentList.innerHTML = recentHtml || '<li class="text-stone-400">暂无</li>';
-}
+// ==================== 返回分类板块 ====================
+document.getElementById('backToCategories')?.addEventListener('click', () => {
+    document.getElementById('filesView').classList.add('hidden');
+    document.getElementById('categoriesView').classList.remove('hidden');
+    currentCategory = null;
+});
 
-// ==================== 模块：搜索功能 ====================
-function bindSearch() {
-    const input = document.getElementById('searchInput');
-    if (!input) return;
-    input.addEventListener('input', (e) => {
-        const kw = e.target.value.trim().toLowerCase();
-        let filtered = currentCategory === 'all' 
-            ? allDocs 
-            : allDocs.filter(doc => (doc.category || '未分类') === currentCategory);
-        if (kw) {
-            filtered = filtered.filter(doc => 
-                doc.title.toLowerCase().includes(kw) || 
-                doc.description.toLowerCase().includes(kw)
-            );
-        }
-        renderDocs(filtered);
-    });
-}
-
-// ==================== 模块：预览派发 ====================
-function previewFile(filename, type) {
-    const handler = PREVIEW_HANDLERS[type.toLowerCase()];
-    if (handler) {
-        handler(filename);
-    } else {
-        showPreviewError('暂不支持此文件类型预览');
-    }
-}
-
+// ==================== 预览功能 ====================
 function showPreviewContainer() {
     const modal = document.getElementById('previewModal');
     const container = document.getElementById('previewContainer');
     const modalWindow = document.getElementById('modalWindow');
-    
+
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     if (isMaximized) toggleMaximize();
     modalWindow.style.width = '';
     modalWindow.style.height = '';
     container.innerHTML = '<div class="flex justify-center items-center py-20"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div><span class="ml-3 text-stone-500">加载中...</span></div>';
-    return { modal, container };
+    return container;
+}
+
+function previewFile(filename, type) {
+    const handler = PREVIEW_HANDLERS[type.toLowerCase()];
+    if (handler) {
+        handler(filename);
+    } else {
+        const container = showPreviewContainer();
+        container.innerHTML = '<div class="text-center py-10 text-orange-600">暂不支持此文件类型预览</div>';
+    }
 }
 
 function previewMarkdown(filename) {
-    const { container } = showPreviewContainer();
+    const container = showPreviewContainer();
     const encodedUrl = encodeURI(`uploads/${filename}`);
-    
+
     fetch(encodedUrl)
         .then(res => {
             if (!res.ok) throw new Error('文件不存在');
             return res.text();
         })
-        .then(mdText => {
-            container.innerHTML = marked.parse(mdText);
+        .then(text => {
+            container.innerHTML = marked.parse(text);
             if (typeof katex !== 'undefined') {
                 renderMathInContainer(container);
             }
         })
         .catch(() => {
-            container.innerHTML = '<div class="text-center py-10 text-orange-600">MD 文件加载失败</div>';
+            container.innerHTML = '<div class="text-center py-10 text-orange-600">MD 文件加载失败，请确认文件存在</div>';
         });
 }
 
 function previewOffice(filename) {
-    const { container } = showPreviewContainer();
+    const container = showPreviewContainer();
     const fullUrl = `${window.location.origin}/uploads/${encodeURIComponent(filename)}`;
     const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullUrl)}`;
     container.innerHTML = `<iframe src="${officeUrl}" width="100%" height="600px" frameborder="0" class="rounded-lg shadow-sm"></iframe>`;
 }
 
 function previewPdf(filename) {
-    const { container } = showPreviewContainer();
+    const container = showPreviewContainer();
     const fullUrl = `${window.location.origin}/uploads/${encodeURIComponent(filename)}`;
     container.innerHTML = `<iframe src="${fullUrl}" width="100%" height="600px" frameborder="0" class="rounded-lg shadow-sm"></iframe>`;
 }
 
 function previewImage(filename) {
-    const { container } = showPreviewContainer();
+    const container = showPreviewContainer();
     const fullUrl = `${window.location.origin}/uploads/${encodeURIComponent(filename)}`;
     container.innerHTML = `<div class="flex justify-center"><img src="${fullUrl}" alt="预览图片" class="max-w-full max-h-[70vh] rounded-lg shadow-lg object-contain"></div>`;
-}
-
-function showPreviewError(msg) {
-    const { container } = showPreviewContainer();
-    container.innerHTML = `<div class="text-center py-10 text-orange-600">${msg}</div>`;
 }
 
 function renderMathInContainer(element) {
     if (typeof katex === 'undefined') return;
     const inlineRegex = /\\\(([\s\S]+?)\\\)/g;
     const displayRegex = /\\\[([\s\S]+?)\\\]/g;
-    
+
     function walk(node) {
         if (node.nodeType === Node.TEXT_NODE) {
             let text = node.textContent;
             let hasMath = false;
             let newHtml = text;
+
             newHtml = newHtml.replace(displayRegex, (match, formula) => {
                 hasMath = true;
-                try { return katex.renderToString(formula, { displayMode: true, throwOnError: false }); } 
-                catch(e) { return match; }
+                try {
+                    return katex.renderToString(formula, { displayMode: true, throwOnError: false });
+                } catch (e) {
+                    return match;
+                }
             });
             newHtml = newHtml.replace(inlineRegex, (match, formula) => {
                 hasMath = true;
-                try { return katex.renderToString(formula, { displayMode: false, throwOnError: false }); } 
-                catch(e) { return match; }
+                try {
+                    return katex.renderToString(formula, { displayMode: false, throwOnError: false });
+                } catch (e) {
+                    return match;
+                }
             });
+
             if (hasMath) {
                 const span = document.createElement('span');
                 span.innerHTML = newHtml;
@@ -284,7 +275,7 @@ function renderMathInContainer(element) {
     walk(element);
 }
 
-// ==================== 模块：Mac 风格模态框控制 ====================
+// ==================== Mac 风格模态框控制 ====================
 function initModalControls() {
     const modal = document.getElementById('previewModal');
     const modalWindow = document.getElementById('modalWindow');
@@ -301,17 +292,17 @@ function initModalControls() {
         document.getElementById('previewContainer').innerHTML = '';
         if (isMaximized) toggleMaximize();
     });
-    
+
     minimizeBtn.addEventListener('click', () => {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     });
-    
+
     maximizeBtn.addEventListener('click', toggleMaximize);
 
     let isDragging = false;
     let dragOffset = { x: 0, y: 0 };
-    
+
     header.addEventListener('mousedown', (e) => {
         if (e.target.closest('.modal-buttons')) return;
         if (isMaximized) return;
@@ -322,7 +313,7 @@ function initModalControls() {
         modalWindow.style.margin = '0';
         document.body.style.userSelect = 'none';
     });
-    
+
     window.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
         let left = e.clientX - dragOffset.x;
@@ -334,7 +325,7 @@ function initModalControls() {
         modalWindow.style.right = 'auto';
         modalWindow.style.bottom = 'auto';
     });
-    
+
     window.addEventListener('mouseup', () => {
         isDragging = false;
         document.body.style.userSelect = '';
@@ -372,7 +363,7 @@ function toggleMaximize() {
 // ==================== 辅助函数 ====================
 function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
+    return str.replace(/[&<>]/g, (m) => {
         if (m === '&') return '&amp;';
         if (m === '<') return '&lt;';
         if (m === '>') return '&gt;';

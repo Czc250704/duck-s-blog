@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Duck's Blog · 访达风格</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Duck's Blog</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 主题配置 -->
     <script>
         tailwind.config = {
             theme: {
@@ -19,7 +17,6 @@
             }
         }
     </script>
-    <!-- 外部资源 -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/main.css">
     <script src="assets/libs/marked.min.js"></script>
@@ -41,65 +38,57 @@
                 <a href="#" class="text-2xl font-bold text-orange-500 tracking-tight">Duck's Blog</a>
                 <nav class="hidden md:flex gap-6">
                     <a href="#" class="nav-link text-stone-600 hover:text-orange-500 transition">首页</a>
-                    <a href="#" class="nav-link text-stone-600 hover:text-orange-500 transition">归档</a>
-                    <a href="#" class="nav-link text-stone-600 hover:text-orange-500 transition">关于</a>
+                    <a href="#" class="nav-link text-stone-600 hover:text-orange-500">归档</a>
+                    <a href="#" class="nav-link text-stone-600 hover:text-orange-500">关于</a>
                 </nav>
             </div>
         </header>
 
-        <!-- 主区域 -->
-        <main class="max-w-7xl mx-auto px-6 py-10">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- 左侧文档列表 -->
-                <div class="lg:col-span-2" id="docsList">
-                    <div class="text-center py-10 text-stone-400 animate-pulse">加载文档列表中...</div>
-                </div>
+        <!-- 分类板块（大按钮块） -->
+        <div id="categoriesView" class="max-w-7xl mx-auto px-6 py-10">
+            <h2 class="text-2xl font-bold text-stone-700 mb-6">分类浏览</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="categoriesGrid"></div>
+        </div>
 
-                <!-- 右侧边栏（访达风格） -->
-                <aside class="space-y-6">
-                    <!-- 分类浏览 -->
-                    <div class="bg-white/80 backdrop-blur-sm rounded-xl border border-orange-100 p-5 shadow-sm">
+        <!-- 文件列表视图（初始隐藏） -->
+        <div id="filesView" class="max-w-7xl mx-auto px-6 py-10 hidden">
+            <div class="flex items-center gap-3 mb-6">
+                <button id="backToCategories" class="flex items-center gap-2 text-orange-500 hover:text-orange-600 transition">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-arrow-left"/></svg>
+                    返回分类
+                </button>
+                <h2 id="currentCategoryTitle" class="text-2xl font-bold text-stone-700"></h2>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <!-- 左侧：文件列表（小卡片） -->
+                <div class="lg:col-span-3" id="filesList"></div>
+                <!-- 右侧：侧边栏（当前分类下的文件导航） -->
+                <aside class="space-y-4">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-xl border border-orange-100 p-4 shadow-sm">
                         <div class="flex items-center gap-2 text-orange-500 font-semibold mb-3">
                             <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-folder"/></svg>
-                            <span>分类浏览</span>
+                            <span class="text-sm">本分类文件</span>
                         </div>
-                        <div class="flex flex-wrap gap-2" id="categoryButtons"></div>
-                    </div>
-                    <!-- 搜索框 -->
-                    <div class="bg-white/80 backdrop-blur-sm rounded-xl border border-orange-100 p-5 shadow-sm">
-                        <div class="flex items-center gap-2 text-orange-500 font-semibold mb-3">
-                            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-search"/></svg>
-                            <span>搜索文章</span>
-                        </div>
-                        <input type="text" id="searchInput" placeholder="关键词..." class="w-full px-4 py-2 border border-orange-100 rounded-full bg-white/50 focus:outline-none focus:ring-2 focus:ring-orange-200 transition">
-                    </div>
-                    <!-- 关于作者 -->
-                    <div class="bg-white/80 backdrop-blur-sm rounded-xl border border-orange-100 p-5 shadow-sm text-center">
-                        <div class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
-                            <svg class="w-10 h-10 fill-orange-500" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-user"/></svg>
-                        </div>
-                        <h3 class="font-bold text-lg">Duck</h3>
-                        <p class="text-sm text-stone-500 mt-1">会用AI的duck</p>
-                        <p class="text-xs text-stone-400 mt-2">热爱PS / 技术分享</p>
+                        <ul id="fileSidebarList" class="space-y-2 text-sm max-h-96 overflow-y-auto"></ul>
                     </div>
                 </aside>
             </div>
-        </main>
+        </div>
+    </div>
 
-        <!-- Mac 风格模态框 -->
-        <div id="previewModal" class="modal hidden">
-            <div class="modal-window" id="modalWindow">
-                <div class="modal-header" id="modalHeader">
-                    <div class="modal-buttons">
-                        <button class="modal-close" title="关闭"></button>
-                        <button class="modal-minimize" title="最小化"></button>
-                        <button class="modal-maximize" title="最大化"></button>
-                    </div>
-                    <span class="modal-title">预览窗口</span>
-                    <div class="modal-placeholder"></div>
+    <!-- Mac 风格预览模态框 -->
+    <div id="previewModal" class="modal hidden">
+        <div class="modal-window" id="modalWindow">
+            <div class="modal-header" id="modalHeader">
+                <div class="modal-buttons">
+                    <button class="modal-close" title="关闭"></button>
+                    <button class="modal-minimize" title="最小化"></button>
+                    <button class="modal-maximize" title="最大化"></button>
                 </div>
-                <div id="previewContainer" class="modal-body"></div>
+                <span class="modal-title">预览窗口</span>
+                <div class="modal-placeholder"></div>
             </div>
+            <div id="previewContainer" class="modal-body"></div>
         </div>
     </div>
 
