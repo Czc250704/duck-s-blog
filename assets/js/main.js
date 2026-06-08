@@ -218,8 +218,16 @@ function previewMarkdown(filename) {
 
 function previewOffice(filename) {
     const container = showPreviewContainer();
-    const fullUrl = `${window.location.origin}/uploads/${encodeURIComponent(filename)}`;
-    const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullUrl)}`;
+    // 获取当前域名，强制转为 HTTPS（因为 Office Online 需要 HTTPS）
+    let hostname = window.location.hostname;
+    let httpsUrl = `https://${hostname}/uploads/${encodeURIComponent(filename)}`;
+    
+    // 本地测试时回退到 HTTP
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        httpsUrl = `${window.location.origin}/uploads/${encodeURIComponent(filename)}`;
+    }
+    
+    const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(httpsUrl)}`;
     container.innerHTML = `<iframe src="${officeUrl}" width="100%" height="600px" frameborder="0" class="rounded-lg shadow-sm"></iframe>`;
 }
 
