@@ -1,5 +1,6 @@
 /**
  * Duck's Blog - 访达风格文件管理器
+ * 入口密码保护 + 分类密码保护
  * 所有弹窗均为 Mac 风格浮动窗口
  */
 
@@ -8,8 +9,11 @@ let allDocs = [];
 let currentCategory = null;
 let isMaximized = false;
 let originalModalSize = {};
+let isAuthenticated = false;  // 入口密码验证状态
 
-const PASSWORD = '25307jdjs';
+// 密码常量
+const ENTRY_PASSWORD = '250704@tgfz';  // 博客入口密码
+const CATEGORY_PASSWORD = '25307jdjs'; // 分类密码（非"代码"分类）
 
 // 预览处理器映射
 const PREVIEW_HANDLERS = {
@@ -32,17 +36,14 @@ const PREVIEW_HANDLERS = {
 // ==================== Mac 风格浮动提示框 ====================
 function showPrompt(options) {
     return new Promise((resolve) => {
-        const { title = '提示', message, input = false, placeholder = '', confirmText = '确定', cancelText = '取消' } = options;
+        const { title = '提示', message, input = false, placeholder = '', confirmText = '确定', cancelText = '取消', inputType = 'text' } = options;
         
-        // 创建遮罩层
         const overlay = document.createElement('div');
         overlay.className = 'floating-prompt';
         
-        // 创建弹窗窗口
         const promptWindow = document.createElement('div');
         promptWindow.className = 'prompt-window';
         
-        // 标题栏
         const header = document.createElement('div');
         header.className = 'prompt-header';
         header.innerHTML = `
@@ -53,7 +54,6 @@ function showPrompt(options) {
             <div class="prompt-placeholder"></div>
         `;
         
-        // 内容区
         const body = document.createElement('div');
         body.className = 'prompt-body';
         
@@ -65,14 +65,12 @@ function showPrompt(options) {
         let inputEl = null;
         if (input) {
             inputEl = document.createElement('input');
-            inputEl.type = 'password';
+            inputEl.type = inputType;
             inputEl.className = 'prompt-input';
             inputEl.placeholder = placeholder;
-            inputEl.placeholder = '请输入密码';
             body.appendChild(inputEl);
         }
         
-        // 底部按钮
         const footer = document.createElement('div');
         footer.className = 'prompt-footer';
         
@@ -84,7 +82,7 @@ function showPrompt(options) {
         confirmBtn.className = 'prompt-btn prompt-btn-primary';
         confirmBtn.textContent = confirmText;
         
-        footer.appendChild(cancelBtn);
+        if (cancelText) footer.appendChild(cancelBtn);
         footer.appendChild(confirmBtn);
         body.appendChild(footer);
         
@@ -93,18 +91,13 @@ function showPrompt(options) {
         overlay.appendChild(promptWindow);
         document.body.appendChild(overlay);
         
-        // 关闭函数
         const close = (result, value) => {
             overlay.remove();
             resolve({ confirmed: result, value });
         };
         
-        // 事件绑定
-        const closeBtn = header.querySelector('.prompt-close');
-        closeBtn.addEventListener('click', () => close(false, null));
-        
-        cancelBtn.addEventListener('click', () => close(false, null));
-        
+        header.querySelector('.prompt-close').addEventListener('click', () => close(false, null));
+        if (cancelText) cancelBtn.addEventListener('click', () => close(false, null));
         confirmBtn.addEventListener('click', () => {
             if (inputEl) {
                 close(true, inputEl.value);
@@ -115,18 +108,13 @@ function showPrompt(options) {
         
         if (inputEl) {
             inputEl.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    confirmBtn.click();
-                }
+                if (e.key === 'Enter') confirmBtn.click();
             });
             setTimeout(() => inputEl.focus(), 100);
         }
         
-        // 点击遮罩层关闭（非弹窗区域）
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                close(false, null);
-            }
+            if (e.target === overlay) close(false, null);
         });
     });
 }
@@ -135,37 +123,56 @@ function showAlert(message, title = '提示') {
     return showPrompt({ title, message, input: false, confirmText: '确定', cancelText: '' });
 }
 
-function showPasswordPrompt() {
+function showPasswordPrompt(title, message, placeholder = '请输入密码') {
     return showPrompt({
-        title: '密码验证',
-        message: '此分类需要密码才能查看，请输入密码：',
+        title: title,
+        message: message,
         input: true,
-        placeholder: '请输入密码',
+        placeholder: placeholder,
         confirmText: '验证',
-        cancelText: '取消'
+        cancelText: '取消',
+        inputType: 'password'
     });
 }
 
-// ==================== 启动动画 ====================
-function initSplash() {
+// ==================== 入口密码验证 ====================
+async function checkEntryPassword() {
+    // 隐藏主内容，显示启动层（但启动动画已存在，我们利用 splash 层）
     const splash = document.getElementById('splash');
     const splashText = document.getElementById('splashText');
     const mainContent = document.getElementById('mainContent');
-
-    setTimeout(() => {
-        splashText.style.animation = 'fadeOutScale 0.5s ease forwards';
+    
+    // 修改启动层样式，使其不自动消失，而是等待密码
+    splash.style.display = 'flex';
+    splash.style.opacity = '1';
+    splashText.textContent = "Duck's Blog";
+    splashText.style.animation = 'none';
+    splashText.style.opacity = '1';
+    splashText.style.transform = 'scale(1)';
+    
+    // 创建一个密码输入浮层（覆盖在启动层上）
+    const result = await showPasswordPrompt('博客入口验证', '请输入密码以访问博客内容', '密码');
+    
+    if (result.confirmed && result.value === ENTRY_PASSWORD) {
+        isAuthenticated = true;
+        // 播放退出动画
+        splash.style.opacity = '0';
         setTimeout(() => {
-            splashText.textContent = "Duck's Blog";
-            splashText.style.animation = 'fadeInScale 0.6s ease forwards';
-            setTimeout(() => {
-                splash.style.opacity = '0';
-                setTimeout(() => {
-                    splash.style.display = 'none';
-                    mainContent.style.display = 'block';
-                }, 800);
-            }, 1200);
-        }, 500);
-    }, 1200);
+            splash.style.display = 'none';
+            mainContent.style.display = 'block';
+        }, 800);
+        return true;
+    } else {
+        await showAlert('密码错误，无法进入博客！', '验证失败');
+        // 重新显示密码输入框
+        return checkEntryPassword();
+    }
+}
+
+// ==================== 启动动画（修改为等待密码） ====================
+async function initSplash() {
+    // 直接进入密码验证流程
+    await checkEntryPassword();
 }
 
 // ==================== 加载数据 ====================
@@ -206,9 +213,10 @@ function renderCategories() {
     document.querySelectorAll('.category-block').forEach(block => {
         block.addEventListener('click', async () => {
             const cat = block.dataset.category;
+            // 只有"代码"分类不需要密码
             if (cat !== '代码') {
-                const result = await showPasswordPrompt();
-                if (!result.confirmed || result.value !== PASSWORD) {
+                const result = await showPasswordPrompt('分类验证', `分类「${cat}」需要密码才能查看，请输入密码：`, '密码');
+                if (!result.confirmed || result.value !== CATEGORY_PASSWORD) {
                     await showAlert('密码错误，无权限访问！', '验证失败');
                     return;
                 }
@@ -486,8 +494,8 @@ function escapeHtml(str) {
 }
 
 // ==================== 启动应用 ====================
-document.addEventListener('DOMContentLoaded', () => {
-    initSplash();
-    loadData();
+document.addEventListener('DOMContentLoaded', async () => {
+    await initSplash();  // 等待密码验证完成
+    await loadData();
     initModalControls();
 });
